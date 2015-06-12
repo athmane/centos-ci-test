@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python -u
 # A script to provision node via Duffy API and run centos testsuite
 # Author: Athmane Madjoudj <athmane@fedoraproject.org>
 #
@@ -73,9 +73,7 @@ if __name__ == '__main__':
             time.sleep(30)
             if test_port(vm_ip, 22) or time.time() > timeout:
                 break
-        testsuite_cmds = [ 'cd /root/%s && chmod +x ./centos_ci_build && ./centos_ci_build' % os.path.basename(os.environ['WORKSPACE']),
-                            'ls -R /root' ]
-        print testsuite_cmds
+        testsuite_cmds = [ 'cd /root/%s && chmod +x ./centos_ci_build && ./centos_ci_build' % os.path.basename(os.environ['WORKSPACE'])]
         out = 0
         try:
             print 'Copying the test suite ...'
