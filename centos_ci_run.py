@@ -20,10 +20,9 @@ API_KEY = os.environ['APIKEY']
 NODE_TYPE = {
     "c7_64" : {"arch":"x86_64", "ver":"7"},
     "c6_64" : {"arch":"x86_64", "ver":"6"},
-    "c6_32" : {"arch":"i386", "ver":"6"},
+    "c6_32" : {"arch":"i386",   "ver":"6"},
     "c5_64" : {"arch":"x86_64", "ver":"5"},
-    "c5_32" : {"arch":"i386", "ver":"5"},
-
+    "c5_32" : {"arch":"i386",   "ver":"5"},
 }
 
 def test_port(address, port):
@@ -40,11 +39,16 @@ class CentOSCI:
         pass
     def create_vm(self,vm_tmpl):
         get_node_url = "%s/Node/get?key=%s&ver=%s&arch=%s" % (BASE_URL, API_KEY, NODE_TYPE[vm_tmpl]["ver"], NODE_TYPE[vm_tmpl]["arch"])
-        get_node_result = json.loads(urllib.urlopen(get_node_url).read())
+        get_node_reponse = urllib.urlopen(get_node_url).read()
+        try:
+            get_node_result = json.loads(get_node_reponse)
+        except Exception, e_json:
+            print get_node_reponse
+            return
         return (get_node_result['ssid'], get_node_result['hosts'][0])
         
     def ssh_run(self, ip_addr, cmd):
-        return  subprocess.call("ssh -o StrictHostKeyChecking=no root@%s '%s'" % (ip_addr,cmd), shell=True)
+        return  subprocess.call("ssh -t -o StrictHostKeyChecking=no root@%s '%s'" % (ip_addr,cmd), shell=True)
 
     def scp_jenkins_workspace(self, ip_addr):
         return  subprocess.call("scp -r -o StrictHostKeyChecking=no %s root@%s:/root/ " % (os.environ['WORKSPACE'], ip_addr), shell=True)
@@ -58,8 +62,12 @@ if __name__ == '__main__':
     
     if vm_type in NODE_TYPE.keys():
         ci = CentOSCI()
+        try:
+            vm_id, vm_ip = ci.create_vm(vm_tmpl = vm_type)
+        except Exception, e_vm_create:
+            print "Cannot create VM."
+            sys.exit(-1)
 
-        vm_id, vm_ip = ci.create_vm(vm_tmpl = vm_type)
         # SIGTERM handler [THIS IS UGLY]
         def sigterm_handler(signal, frame):
             print "Build terminated ..."
